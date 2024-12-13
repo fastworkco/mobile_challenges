@@ -5,20 +5,52 @@ class TMDBService {
   static const String baseUrl = 'https://api.themoviedb.org/3';
   static const String apiKey = '7e52f5367e0a3cba86aa071779060201'; // Replace with your actual API key
 
-  // Create a guest session for anonymous access
-  Future<Map<String, dynamic>> login() async {
+  // Login with username and password
+  Future<Map<String, dynamic>> login(String username, String password) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/authentication/guest_session/new?api_key=$apiKey'),
+      // First, get a request token
+      final tokenResponse = await http.get(
+        Uri.parse('$baseUrl/authentication/token/new?api_key=$apiKey'),
       );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to create guest session');
+      
+      if (tokenResponse.statusCode != 200) {
+        throw Exception('Failed to get request token');
       }
 
-      return json.decode(response.body);
+      final tokenData = json.decode(tokenResponse.body);
+      final requestToken = tokenData['request_token'];
+
+      // Validate the request token with login credentials
+      final validateResponse = await http.post(
+        Uri.parse('$baseUrl/authentication/token/validate_with_login?api_key=$apiKey'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': username,
+          'password': password,
+          'request_token': requestToken,
+        }),
+      );
+
+      if (validateResponse.statusCode != 200) {
+        throw Exception('Invalid credentials');
+      }
+
+      // Create a session ID
+      final sessionResponse = await http.post(
+        Uri.parse('$baseUrl/authentication/session/new?api_key=$apiKey'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'request_token': requestToken,
+        }),
+      );
+
+      if (sessionResponse.statusCode != 200) {
+        throw Exception('Failed to create session');
+      }
+
+      return json.decode(sessionResponse.body);
     } catch (e) {
-      throw Exception('Guest login failed: $e');
+      throw Exception('Login failed: $e');
     }
   }
 
