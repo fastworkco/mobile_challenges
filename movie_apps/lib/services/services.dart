@@ -54,14 +54,19 @@ class TMDBService {
     }
   }
 
-  // Get movie list (popular movies by default)
+  // Get movie list with filtering options
   Future<Map<String, dynamic>> getMovieList({
     int page = 1,
     String sortBy = 'popularity.desc',
+    String? listType, // 'now_playing', 'upcoming', or null for discover
   }) async {
     try {
+      final endpoint = listType != null 
+          ? '/movie/$listType'  // Use specific endpoints for now_playing or upcoming
+          : '/discover/movie';  // Default to discover for general movie list
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/discover/movie?api_key=$apiKey&page=$page&sort_by=$sortBy'),
+        Uri.parse('$baseUrl$endpoint?api_key=$apiKey&page=$page${listType == null ? '&sort_by=$sortBy' : ''}'),
       );
 
       if (response.statusCode != 200) {
@@ -88,6 +93,23 @@ class TMDBService {
       return json.decode(response.body);
     } catch (e) {
       throw Exception('Failed to get movie details: $e');
+    }
+  }
+
+  // Get account details
+  Future<Map<String, dynamic>> getAccountDetails(String sessionId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/account?api_key=$apiKey&session_id=$sessionId'),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to fetch account details');
+      }
+
+      return json.decode(response.body);
+    } catch (e) {
+      throw Exception('Failed to get account details: $e');
     }
   }
 }

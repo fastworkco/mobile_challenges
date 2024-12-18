@@ -7,22 +7,26 @@ class AuthState {
   final bool isLoading;
   final String? error;
   final String? sessionId;
+  final String? username;
 
   AuthState({
     this.isLoading = false,
     this.error,
     this.sessionId,
+    this.username,
   });
 
   AuthState copyWith({
     bool? isLoading,
     String? error,
     String? sessionId,
+    String? username,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       sessionId: sessionId ?? this.sessionId,
+      username: username ?? this.username,
     );
   }
 }
@@ -37,9 +41,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final response = await _authService.login(username, password);
+      final sessionId = response['session_id'] as String;
+      
+      // Get account details after successful login
+      final accountDetails = await _authService.getAccountDetails(sessionId);
+      
       state = state.copyWith(
         isLoading: false,
-        sessionId: response['session_id'] as String,
+        sessionId: sessionId,
+        username: accountDetails['username'] as String,
         error: null,
       );
     } catch (e) {
@@ -47,6 +57,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         error: e.toString(),
         sessionId: null,
+        username: null,
       );
     }
   }

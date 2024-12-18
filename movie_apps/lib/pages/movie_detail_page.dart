@@ -116,13 +116,14 @@ class MovieDetailPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
-                        height: 160,
+                        height: 180,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: movieDetail.cast.length,
                           itemBuilder: (context, index) {
                             final cast = movieDetail.cast[index];
-                            return Padding(
+                            return Container(
+                              width: 120,
                               padding: const EdgeInsets.only(right: 16),
                               child: Column(
                                 children: [
@@ -139,12 +140,16 @@ class MovieDetailPage extends ConsumerWidget {
                                         child: CircularProgressIndicator(),
                                       ),
                                       errorWidget: (context, url, error) =>
-                                          const Icon(Icons.person),
+                                          Container(
+                                            width: 100,
+                                            height: 120,
+                                            color: Colors.grey[300],
+                                            child: const Icon(Icons.person),
+                                          ),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  SizedBox(
-                                    width: 100,
+                                  Expanded(
                                     child: Text(
                                       cast.name,
                                       style: Theme.of(context).textTheme.bodyMedium,

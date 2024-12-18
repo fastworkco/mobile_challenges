@@ -3,24 +3,73 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/movie_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/movie.dart';
 import 'movie_detail_page.dart';
 
 class MovieListPage extends ConsumerWidget {
   const MovieListPage({super.key});
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning';
+    } else if (hour < 17) {
+      return 'Good Afternoon';
+    } else {
+      return 'Good Evening';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final moviesAsyncValue = ref.watch(movieListProvider);
+    final currentListType = ref.watch(movieListTypeProvider);
+    final authState = ref.watch(authProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Popular Movies'),
+        title: Text(
+          authState.username != null 
+              ? '${_getGreeting()}, ${authState.username}!'
+              : 'Welcome to Movies',
+        ),
       ),
-      body: moviesAsyncValue.when(
-        data: (movies) => MovieListView(movies: movies),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+      body: Column(
+        children: [
+          // Filter buttons
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FilterChip(
+                  label: const Text('All'),
+                  selected: currentListType == null,
+                  onSelected: (_) => ref.read(movieListTypeProvider.notifier).state = null,
+                ),
+                FilterChip(
+                  label: const Text('Now Playing'),
+                  selected: currentListType == 'now_playing',
+                  onSelected: (_) => ref.read(movieListTypeProvider.notifier).state = 'now_playing',
+                ),
+                FilterChip(
+                  label: const Text('Coming Soon'),
+                  selected: currentListType == 'upcoming',
+                  onSelected: (_) => ref.read(movieListTypeProvider.notifier).state = 'upcoming',
+                ),
+              ],
+            ),
+          ),
+          // Movie list
+          Expanded(
+            child: moviesAsyncValue.when(
+              data: (movies) => MovieListView(movies: movies),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Error: $error')),
+            ),
+          ),
+        ],
       ),
     );
   }
